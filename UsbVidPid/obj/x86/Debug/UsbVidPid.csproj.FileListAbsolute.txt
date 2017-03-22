@@ -13,3 +13,11 @@ C:\Users\Valentin\Downloads\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.csproj.G
 C:\Users\Valentin\Downloads\UsbVidPid\UsbVidPid\bin\Debug\UsbVidPid.exe
 C:\Users\Valentin\Downloads\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.exe
 C:\Users\Valentin\Downloads\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.csprojResolveAssemblyReference.cache
+C:\Live\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.exe
+C:\Live\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.pdb
+C:\Live\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.csprojResolveAssemblyReference.cache
+C:\Live\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.Form1.resources
+C:\Live\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.Properties.Resources.resources
+C:\Live\UsbVidPid\UsbVidPid\obj\x86\Debug\UsbVidPid.csproj.GenerateResource.Cache
+C:\Live\UsbVidPid\UsbVidPid\bin\Debug\UsbVidPid.exe
+C:\Live\UsbVidPid\UsbVidPid\bin\Debug\UsbVidPid.pdb
