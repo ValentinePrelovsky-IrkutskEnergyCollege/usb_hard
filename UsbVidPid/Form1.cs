@@ -48,7 +48,7 @@ namespace UsbVidPid
                     //Получение Серийного номера устройства
                     string[] splitDeviceId = drive["PNPDeviceID"].ToString().Trim().Split('\\');
                     listBox1.Items.Add("Серийный номер= " + splitDeviceId[2].Trim());
-                    textBox1.Text = splitDeviceId[2].Trim();
+                   
 
                     // проверка на совпадение: должны быть идентичны с константами:
                     // 1. серийный номер флэшки
@@ -60,7 +60,7 @@ namespace UsbVidPid
                             PID_KEK == parsePidFromDeviceID(drive["PNPDeviceID"].ToString().Trim()).Trim()
                         )
                     {
-                        this.textBox1.Text = drive["PNPDeviceID"].ToString().Trim().Trim();
+                       
                         listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim().Trim());
                         timer1.Enabled = false;
                         resultat = true;
@@ -135,7 +135,15 @@ namespace UsbVidPid
                 System.IO.File.Create(dirToFile);                
             }            
         }
-        
+
+        public void PCI_Disconnect()
+        {
+        }
+
+        public void PCI_Connect()
+        {
+        }
+
         public string parsePCIVendor(string s)
         {
             // выделяет из строки DeviceID строку = коду VEN
@@ -164,44 +172,9 @@ namespace UsbVidPid
 
             return (res);
         }
-        public string getPCIVendor(string deviceId)
-        {
-            string res = deviceId;
-            string[] list;
-            // по строке извлекает код производителя
-
-            list = res.Split('\\');
-            this.listBox2.Items.Add("---");
-
-            // в цикле смотрим на содержимое строки DeviceID на наличие строки производителя
-            for(int i = 0; i < list.Length; i++)
-            {
-                this.listBox2.Items.Add("- " + list[i].ToString());
-                if (list[i].ToString().Contains("VEN"))
-                {
-                    // строго говоря, бесполезная функция
-                    MessageBox.Show(parsePCIVendor(list[i]) + " - " + parsePCIDevId(list[i]));
-                }
-            }
-            return res;
-        }
+        
     
-        public void searchPCI()
-        {
-            string[] plist;
-            string l = "";
-
-            // Для выбора доступны вместо звёздочки: DeviceId,Name, Caption,PNPDeviceId,ServiceManufaturer,Description
-            string queryPCI = "SELECT * FROM Win32_PnPEntity WHERE Service='pci' ";
-            foreach (System.Management.ManagementObject devices in new System.Management.ManagementObjectSearcher(queryPCI).Get())
-            {
-                listBox2.Items.Add(devices["Name"].ToString().Trim());
-                listBox2.Items.Add("\t -" + devices["DeviceId"].ToString().Trim());
-                l = devices["DeviceId"].ToString().Trim();
-            }
-            plist = l.Split('\\');
-            getPCIVendor(l);
-        }
+        
         
         private void button1_Click(object sender, EventArgs e)
         {
@@ -213,7 +186,7 @@ namespace UsbVidPid
 
                 //Получение списка USB накопителей
                 foreach (System.Management.ManagementObject drive in new System.Management.ManagementObjectSearcher(
-                        "select * from Win32_USBHub where Caption='Запоминающее устройство для USB'").Get())
+                        "select * from Win32_USBHub").Get())
                 {
 
                     PNPDeviceID = drive["PNPDeviceID"].ToString().Trim();
@@ -226,13 +199,13 @@ namespace UsbVidPid
                     //Получение Серийного номера устройства
                     string[] splitDeviceId = drive["PNPDeviceID"].ToString().Trim().Split('\\');
                     listBox1.Items.Add("Серийный номер= " + splitDeviceId[2].Trim());
-                    textBox1.Text = splitDeviceId[2].Trim();
+                    
 
                     timer1.Enabled = false;
                    
                     //Разделение списка устройств пустой строкой
                     listBox1.Items.Add("");
-                    this.textBox1.Text = drive["PNPDeviceID"].ToString().Trim().Trim();
+                    
                 }
                 
             }
@@ -272,12 +245,108 @@ namespace UsbVidPid
 
         private void button2_Click(object sender, EventArgs e)
         {
-            searchPCI(); // выводит список устройств со службой = пси
+            
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-           
+            this.listBox1.Items.Clear();
+            foreach (System.Management.ManagementObject drive in new System.Management.ManagementObjectSearcher(
+                        "select * from Win32_PnPEntity").Get())
+            {
+                if ( drive["Description"].ToString().Trim().Contains("USB-устройство ввода"))
+                {
+                    listBox1.Items.Add("LOOOOOOL");
+                    listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim());
+                    listBox1.Items.Add(" - " + drive["Description"].ToString().Trim());
+                    listBox1.Items.Add("---");
+                }
+                if (drive["PNPDeviceId"].ToString().Trim().Contains("USB\\VID_0BDA&PID_0103"))
+                {
+                    listBox1.Items.Add("-----");
+                    listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim());
+                    listBox1.Items.Add(" - " + drive["Description"].ToString().Trim());
+                    listBox1.Items.Add("---");
+                }
+                /*
+                if (drive["Description"].ToString().Trim() == "Дисковый накопитель")
+                {
+                    listBox1.Items.Add("");
+                    listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim());
+                    listBox1.Items.Add(" - " + drive["Description"].ToString().Trim());
+                    listBox1.Items.Add("");
+                }
+                 * */
+                //listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim());
+                //listBox1.Items.Add(" - " + drive["Description"].ToString().Trim());
+
+            }// NYHUA
+            
+        }
+        private void PutToTray(bool isPut)
+        {
+            this.notifyIcon1.Visible = isPut;
+            this.WindowState = (isPut) ? FormWindowState.Minimized : FormWindowState.Normal;
+            this.ShowInTaskbar = !isPut;
+        }
+        private void button4_Click(object sender, EventArgs e)
+        {
+            PutToTray(true);
+        }
+
+        
+
+        ContextMenu trayMenu = new ContextMenu();
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+        {
+            PutToTray(false);
+        }
+
+        private void notifyIcon1_BalloonTipShown(object sender, EventArgs e)
+        {
+           // MessageBox.Show("");
+        }
+
+        private void timer2_Tick(object sender, EventArgs e)
+        {
+            if (notifyIcon1.BalloonTipTitle == "is connected") notifyIcon1.BalloonTipTitle = "is not connected";
+            else
+            {
+                notifyIcon1.BalloonTipTitle = "is connected";
+            }
+            //MessageBox.Show("");
+            //notifyIcon1.ShowBalloonTip(2000);
+        }
+
+        private void toolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            PCI_Connect();
+        }
+
+        private void pCIDisconnectToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            PCI_Disconnect();
+        }
+
+        private void notifyIcon1_MouseMove(object sender, MouseEventArgs e)
+        {
+
+            string message = "ПРИВЕТ";
+            notifyIcon1.BalloonTipTitle = message;
+            notifyIcon1.BalloonTipText = message + "!";
+
+            notifyIcon1.ShowBalloonTip(500);
+            
+        }
+
+        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+
         }
     }
 }
