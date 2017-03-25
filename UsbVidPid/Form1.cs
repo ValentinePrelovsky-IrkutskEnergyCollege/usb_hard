@@ -335,18 +335,18 @@ namespace UsbVidPid
 
         private void notifyIcon1_MouseMove(object sender, MouseEventArgs e)
         {
-
             string message = "ПРИВЕТ";
             notifyIcon1.BalloonTipTitle = message;
             notifyIcon1.BalloonTipText = message + "!";
 
             notifyIcon1.ShowBalloonTip(500);
+     
             
         }
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-
+            PutToTray(false);
         }
     }
 }
