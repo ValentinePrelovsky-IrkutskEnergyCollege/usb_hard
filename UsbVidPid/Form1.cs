@@ -18,6 +18,7 @@ namespace UsbVidPid
         string PID_KEK = "1172"; // код устройста или как его там флэшки
 
         string dirToFile = "C:\\TestFile.txt"; // путь к файлу, наличие которого для нас критично важно
+
         bool fileOK = false;
 
         public Form1()
@@ -62,9 +63,9 @@ namespace UsbVidPid
                     {
                        
                         listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim().Trim());
-                        timer1.Enabled = false;
+                        // timer1.Enabled = false;
                         resultat = true;
-                        MessageBox.Show("reboot");
+                        // POWER_RESET();
                     }
                     else
                     {
@@ -101,10 +102,15 @@ namespace UsbVidPid
              */
 
             // 1.               +                or 2.
-            if ((IsFlashInside() & !isFileOK()) | (!IsFlashInside() & isFileOK()))
+            if ((IsFlashInside() && !isFileOK()) | (!IsFlashInside() && isFileOK()))
             {
                 if (!isFileOK()) createFile(); // создать файл если его нет (из ветки 1)
-                run_command("whoami");
+                if (isFileOK())
+                {
+                    deleteFile();
+                }
+                run_command("shutdown /r /t 5");
+                label1.Text = "RESET";
             }           
         }
         public void POWER_ON()
@@ -113,9 +119,10 @@ namespace UsbVidPid
              * 1. флэшка есть + файл есть
              * 2. флэшки нет + нет файла
              */
-            if ((IsFlashInside() & isFileOK()) | (!IsFlashInside() & !isFileOK()))
+            if ((IsFlashInside() && isFileOK()) | (!IsFlashInside() && !isFileOK()))
             {
-                run_command("ping localhost");
+                // run_command("ping localhost");
+                label1.Text = "POWER on";
             }
         }
 
@@ -126,23 +133,26 @@ namespace UsbVidPid
             this.fileOK = File.Exists(dirToFile);
             return (this.fileOK);
         }
+        public void deleteFile()
+        {
+            File.Create(dirToFile).Close();
+        }
         public void createFile()
         {
             // если файла нет - создаёт пустой файл
 
             if (!this.fileOK)
             {
-                System.IO.File.Create(dirToFile);                
+                using (var myFile = File.Create(dirToFile))
+                {
+                    // interact with myFile here, it will be disposed automatically
+                    myFile.Close();
+                }
+
             }            
         }
 
-        public void PCI_Disconnect()
-        {
-        }
-
-        public void PCI_Connect()
-        {
-        }
+        
 
         public string parsePCIVendor(string s)
         {
@@ -240,7 +250,9 @@ namespace UsbVidPid
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            IsFlashInside(); // мониторит наличие флэшки
+            // IsFlashInside(); // мониторит наличие флэшки
+            POWER_ON();
+            POWER_RESET();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -325,12 +337,12 @@ namespace UsbVidPid
 
         private void toolStripMenuItem2_Click(object sender, EventArgs e)
         {
-            PCI_Connect();
+            //PCI_Connect();
         }
 
         private void pCIDisconnectToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            PCI_Disconnect();
+            //PCI_Disconnect();
         }
 
         private void notifyIcon1_MouseMove(object sender, MouseEventArgs e)
