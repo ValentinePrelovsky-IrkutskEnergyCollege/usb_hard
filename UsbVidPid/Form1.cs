@@ -101,17 +101,25 @@ namespace UsbVidPid
              * 2. флэшки нет + файл есть --- удаляем файл
              */
 
-            // 1.               +                or 2.
-            if ((IsFlashInside() && !isFileOK()) | (!IsFlashInside() && isFileOK()))
+            
+            // 2. флэшки нет + файл есть --- удаляем файл
+            if (!IsFlashInside() && isFileOK())
             {
-                if (!isFileOK()) createFile(); // создать файл если его нет (из ветки 1)
-                if (isFileOK())
-                {
-                    deleteFile();
-                }
-                run_command("shutdown /r /t 5");
+                deleteFile();
                 label1.Text = "RESET";
-            }           
+            }
+            // 1. флэшка есть + файла нет --- создать файл
+            else if ((IsFlashInside() && !isFileOK()))
+            {
+                createFile(); // создать файл если его нет (из ветки 1)
+                label1.Text = "RESET";
+            }
+            else { label1.Text = "POWER ON"; }
+           
+
+            // run_command("shutdown /r /t 5"); // команда на перезагрузку
+            // Environment.Exit(0); // досрочно закрыть приложение 
+            
         }
         public void POWER_ON()
         {
@@ -119,7 +127,7 @@ namespace UsbVidPid
              * 1. флэшка есть + файл есть
              * 2. флэшки нет + нет файла
              */
-            if ((IsFlashInside() && isFileOK()) | (!IsFlashInside() && !isFileOK()))
+            if ((IsFlashInside() && isFileOK()) || (!IsFlashInside() && !isFileOK()))
             {
                 // run_command("ping localhost");
                 label1.Text = "POWER on";
@@ -135,7 +143,15 @@ namespace UsbVidPid
         }
         public void deleteFile()
         {
-            File.Create(dirToFile).Close();
+            // File.Create(dirToFile).Close();
+            try
+            {
+                File.Delete(dirToFile);
+            }
+            catch (Exception ex) 
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
         public void createFile()
         {
@@ -251,6 +267,9 @@ namespace UsbVidPid
         private void timer1_Tick(object sender, EventArgs e)
         {
             // IsFlashInside(); // мониторит наличие флэшки
+            label2.Text = "Флэшка есть? =" + Convert.ToString(IsFlashInside());
+            label3.Text = "Файл есть? =" + Convert.ToString(isFileOK());
+
             POWER_ON();
             POWER_RESET();
         }
@@ -359,6 +378,43 @@ namespace UsbVidPid
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             PutToTray(false);
+        }
+
+        
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            deleteFile();
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            createFile();
+        }
+
+        private void button2_Click_1(object sender, EventArgs e)
+        {
+            label2.Text = "Флэшка есть? =" + Convert.ToString(IsFlashInside());
+            label3.Text = "Файл есть? =" + Convert.ToString(isFileOK());
+
+            POWER_ON();
+            POWER_RESET();
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            if (timer1.Enabled == false)
+            {
+                
+                timer1.Enabled = true;
+                button7.Text = "Включен таймер";
+            }
+            else
+            {
+                
+                timer1.Enabled = false;
+                button7.Text = "Выключен таймер";
+            }
         }
     }
 }
