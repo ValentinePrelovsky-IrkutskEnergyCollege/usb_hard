@@ -23,8 +23,10 @@ namespace EGPU
         string VID_KEK = "13FE"; // код производителя флэшки
         string PID_KEK = "4200"; // код устройста или как его там флэшки
 
-        string dirToFile = "C:\\Users\\Slava\\AppData\\Local\\TestFile.txt";
-        string configFile = "C:\\Users\\Slava\\AppData\\Local\\kek.txt"; // там же где и приложение: Application.StartupPath;
+        //string dirToFile = "C:\\Users\\Slava\\AppData\\Local\\TestFile.txt";
+        //string configFile = "C:\\Users\\Slava\\AppData\\Local\\kek.txt"; // там же где и приложение: Application.StartupPath;
+        string dirToFile = "C:\\123\\TEST_FILE.txt";
+        string configFile = "C:\\123\\configSss.txt";
 
         // нужно указывать имя батника вместе с путем
         string FullNameBat1 = @"C:\\pci_off.bat"; // file ok, flash is, power on
@@ -178,8 +180,8 @@ namespace EGPU
             
             if ( (file ^ flash) == true)
             {
-                if (!file) { createFile(); }
-                else       { deleteFile(); }
+                if      (!file && flash) { createFile(); }
+                else if (file && !flash) { deleteFile(); }
                 
                 // для фонового потока
                 label1.Invoke((MethodInvoker)delegate()
@@ -187,7 +189,13 @@ namespace EGPU
                     label1.Text = "RESET";
                 });
 
-                // run_command("shutdown /r /t 5"); // команда на перезагрузку
+
+                run_command("shutdown /r /t 5"); // команда на перезагрузку
+                notifyIcon1.BalloonTipTitle = " E-GPU";
+                notifyIcon1.BalloonTipText = " RESET";
+                
+                notifyIcon1.ShowBalloonTip(500);
+
                 Environment.Exit(0); // досрочно закрыть приложение 
             }
             
@@ -395,7 +403,7 @@ namespace EGPU
             } // end foreach
             catch 
             {
-                MessageBox.Show("Конфигурационный файл неизвестно где");    
+                // MessageBox.Show("Конфигурационный файл неизвестно где");    
             }
             
             timer1.Enabled = true;
@@ -444,14 +452,6 @@ namespace EGPU
             notifyIcon1.ShowBalloonTip(500);
         }
 
-        private void keeh()
-        { 
-           if (IsFlashInside())
-           {
-               mess();
-           }        
-        }
-
         private void button1_Click_1(object sender, EventArgs e)
         {
             // применить вендор и устрйство
@@ -490,11 +490,6 @@ namespace EGPU
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             notifyIcon1.Visible = false;
-        }
-
-        private void timer2_Tick(object sender, EventArgs e)
-        {
-            
         }
     }
 }
