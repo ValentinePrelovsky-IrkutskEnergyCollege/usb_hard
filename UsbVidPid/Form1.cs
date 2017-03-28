@@ -23,10 +23,8 @@ namespace EGPU
         string VID_KEK = "13FE"; // код производителя флэшки
         string PID_KEK = "4200"; // код устройста или как его там флэшки
 
-        //string dirToFile = "C:\\Users\\Slava\\AppData\\Local\\TestFile.txt";
-        //string configFile = "C:\\Users\\Slava\\AppData\\Local\\kek.txt"; // там же где и приложение: Application.StartupPath;
-        string dirToFile = "C:\\123\\TEST_FILE.txt";
-        string configFile = "C:\\123\\configSss.txt";
+        string dirToFile = "C:\\Users\\Slava\\AppData\\Local\\TestFile.txt";
+        string configFile = "C:\\Users\\Slava\\AppData\\Local\\kek.txt"; // там же где и приложение: Application.StartupPath;
 
         // нужно указывать имя батника вместе с путем
         string FullNameBat1 = @"C:\\pci_off.bat"; // file ok, flash is, power on
@@ -77,7 +75,6 @@ namespace EGPU
 
                         listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim().Trim());
                         timer1.Enabled = false;
-                        // POWER_RESET();
                     }
                     else
                     {
@@ -114,9 +111,7 @@ namespace EGPU
                         PID_KEK == parsePidFromDeviceID(drive["PNPDeviceID"].ToString().Trim()).Trim()
                     )
                 {
-                    // timer1.Enabled = false;
                     resultat = true;
-                    // POWER_RESET();
                 }
                 else
                 {
@@ -151,33 +146,7 @@ namespace EGPU
              * 1. флэшка есть + файла нет --- создать файл
              * 2. флэшки нет + файл есть --- удаляем файл
              */
-            /*
-            // 2. флэшки нет + файл есть --- удаляем файл
-            if (!IsFlashInside() && isFileOK())
-            {
-                deleteFile();
-                label1.Invoke((MethodInvoker)delegate()
-                {
-                    label1.Text = "RESET";
-                });
-
-                // run_command("shutdown /r /t 5"); // команда на перезагрузку
-                Environment.Exit(0); // досрочно закрыть приложение 
-            }
-            // 1. флэшка есть + файла нет --- создать файл
-            else if ((IsFlashInside() && !isFileOK()))
-            {
-                createFile(); // создать файл если его нет (из ветки 1)
-                label1.Invoke((MethodInvoker)delegate()
-                {
-                    label1.Text = "RESET";
-                });
-
-                // run_command("shutdown /r /t 5"); // команда на перезагрузку
-                Environment.Exit(0); // досрочно закрыть приложение 
-            }
-            */
-            
+                        
             if ( (file ^ flash) == true)
             {
                 if      (!file && flash) { createFile(); }
@@ -189,13 +158,8 @@ namespace EGPU
                     label1.Text = "RESET";
                 });
 
-
-                run_command("shutdown /r /t 5"); // команда на перезагрузку
-                notifyIcon1.BalloonTipTitle = " E-GPU";
-                notifyIcon1.BalloonTipText = " RESET";
-                
-                notifyIcon1.ShowBalloonTip(500);
-
+                notifyIcon1.Visible = false;
+                run_command("shutdown /r /t 3"); // команда на перезагрузку
                 Environment.Exit(0); // досрочно закрыть приложение 
             }
             
@@ -231,9 +195,7 @@ namespace EGPU
                 File.Delete(dirToFile); 
             }
             catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+            { }
         }
         public void createFile()
         {
@@ -305,16 +267,11 @@ namespace EGPU
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            // перенесено в backgroundWorker1
-            // POWER_ON();
-            // POWER_RESET();
-
-            // if ( (IsFlashInside() && isFileOK())&&((IsFlashInside() && isFileOK()) || (!IsFlashInside() && !isFileOK())) )
             if (flash && file) 
             {
                 run_command(FullNameBat1);
             }
-            // if ( (!IsFlashInside() && !isFileOK())&&((IsFlashInside() && isFileOK()) || (!IsFlashInside() && !isFileOK())) )
+         
             if ( !flash && !file )
             {
                 run_command(FullNameBat2);
@@ -395,22 +352,34 @@ namespace EGPU
                 }
                 
 
-                else { MessageBox.Show("YOU ARE OLEN! " + line); }
+                else { }
                 maskedTextBox1.Text = VID_KEK;
                 maskedTextBox3.Text = PID_KEK;
                 maskedTextBox2.Text = SERIAL_KEK;
                 }
             } // end foreach
             catch 
-            {
-                // MessageBox.Show("Конфигурационный файл неизвестно где");    
-            }
+            { }
             
             timer1.Enabled = true;
             if (backgroundWorker1.IsBusy != true)
             {
                 // Start the asynchronous operation.
                 backgroundWorker1.RunWorkerAsync();
+            }
+            if (IsFlashInside() && isFileOK())
+            {
+                notifyIcon1.BalloonTipTitle = "E-GPU";
+                notifyIcon1.BalloonTipText = "Connected";
+
+                notifyIcon1.ShowBalloonTip(500);
+            }
+            else if (!IsFlashInside() && !isFileOK())
+            {
+                notifyIcon1.BalloonTipTitle = "E-GPU";
+                notifyIcon1.BalloonTipText = "Disconnected";
+
+                notifyIcon1.ShowBalloonTip(500);
             }
         } // end void
         
@@ -442,15 +411,6 @@ namespace EGPU
                 SetAutorunValue(false);
             }
         } // end void
-
-        private void mess()
-        {
-            string message = "E-GPU";
-            notifyIcon1.BalloonTipTitle = message;
-            notifyIcon1.BalloonTipText = "Connect";
-            
-            notifyIcon1.ShowBalloonTip(500);
-        }
 
         private void button1_Click_1(object sender, EventArgs e)
         {
@@ -493,4 +453,3 @@ namespace EGPU
         }
     }
 }
-    

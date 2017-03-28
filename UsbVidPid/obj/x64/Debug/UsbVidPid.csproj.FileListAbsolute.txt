@@ -29,10 +29,11 @@ C:\Users\Valentin\Desktop\UsbVidPid\UsbVidPid\obj\x64\Debug\CustomEGPU.Propertie
 C:\Users\Valentin\Desktop\UsbVidPid\UsbVidPid\obj\x64\Debug\UsbVidPid.csproj.GenerateResource.Cache
 C:\Users\Valentin\Desktop\UsbVidPid\UsbVidPid\obj\x64\Debug\E_GPU.exe
 C:\Users\Valentin\Desktop\UsbVidPid\UsbVidPid\obj\x64\Debug\E_GPU.pdb
-C:\Live\UsbVidPid\UsbVidPid\obj\x64\Debug\E_GPU.exe
-C:\Live\UsbVidPid\UsbVidPid\obj\x64\Debug\E_GPU.pdb
 C:\Live\UsbVidPid\UsbVidPid\bin\x64\Debug\E_GPU.exe
 C:\Live\UsbVidPid\UsbVidPid\bin\x64\Debug\E_GPU.pdb
 C:\Live\UsbVidPid\UsbVidPid\obj\x64\Debug\EGPU.Form1.resources
 C:\Live\UsbVidPid\UsbVidPid\obj\x64\Debug\CustomEGPU.Properties.Resources.resources
 C:\Live\UsbVidPid\UsbVidPid\obj\x64\Debug\UsbVidPid.csproj.GenerateResource.Cache
+C:\Live\UsbVidPid\UsbVidPid\obj\x64\Debug\E_GPU.exe
+C:\Live\UsbVidPid\UsbVidPid\obj\x64\Debug\E_GPU.pdb
+C:\Live\UsbVidPid\UsbVidPid\obj\x64\Debug\UsbVidPid.csprojResolveAssemblyReference.cache
