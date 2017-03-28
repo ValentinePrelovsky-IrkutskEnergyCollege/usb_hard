@@ -1,7 +1,0 @@
-C:\Live\UsbVidPid\UsbVidPid\bin\Release\UsbVidPid.exe
-C:\Live\UsbVidPid\UsbVidPid\bin\Release\UsbVidPid.pdb
-C:\Live\UsbVidPid\UsbVidPid\obj\x86\Release\UsbVidPid.Form1.resources
-C:\Live\UsbVidPid\UsbVidPid\obj\x86\Release\UsbVidPid.Properties.Resources.resources
-C:\Live\UsbVidPid\UsbVidPid\obj\x86\Release\UsbVidPid.csproj.GenerateResource.Cache
-C:\Live\UsbVidPid\UsbVidPid\obj\x86\Release\UsbVidPid.exe
-C:\Live\UsbVidPid\UsbVidPid\obj\x86\Release\UsbVidPid.pdb

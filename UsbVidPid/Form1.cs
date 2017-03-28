@@ -8,16 +8,29 @@ using System.Text;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.IO;
+using Microsoft.Win32;
+using System.Threading;
 
-namespace UsbVidPid
+
+namespace EGPU
 {
-    public partial class Form1 : Form
+    public partial class Form1 : Form     
     {
-        string SERIAL_KEK = "3727012A96BA038732122"; // серийный номер флэшки
-        string VID_KEK = "048D"; // код производителя флэшки
-        string PID_KEK = "1172"; // код устройста или как его там флэшки
 
-        string dirToFile = "C:\\TestFile.txt"; // путь к файлу, наличие которого для нас критично важно
+        bool formIsVisible = false;
+
+        string SERIAL_KEK = "070A615348971B35"; // серийный номер флэшки
+        string VID_KEK = "13FE"; // код производителя флэшки
+        string PID_KEK = "4200"; // код устройста или как его там флэшки
+
+        string dirToFile = "C:\\Users\\Slava\\AppData\\Local\\TestFile.txt";
+        string configFile = "C:\\Users\\Slava\\AppData\\Local\\kek.txt"; // там же где и приложение: Application.StartupPath;
+
+        // нужно указывать имя батника вместе с путем
+        string FullNameBat1 = @"C:\\pci_off.bat"; // file ok, flash is, power on
+        string FullNameBat2 = @"C:\\pci_on.bat";// bat2: "pci on.bat" no file, no flash  power on
+
+        volatile bool flash = false, file = false;
 
         bool fileOK = false;
 
@@ -25,18 +38,16 @@ namespace UsbVidPid
         {
             InitializeComponent();
         }
-        public bool IsFlashInside()
+        public void print_USB_devices()
         {
-            bool resultat = false;
+            string PNPDeviceID = string.Empty;
+            this.listBox1.Items.Clear(); //Предварительно очищаем список
 
+            //Получение списка USB накопителей
+            foreach (System.Management.ManagementObject drive in new System.Management.ManagementObjectSearcher(
+                    "select * from Win32_USBHub where Caption='Запоминающее устройство для USB'").Get())
             {
-                string PNPDeviceID = string.Empty;
 
-                this.listBox1.Items.Clear(); //Предварительно очищаем список
-
-                //Получение списка USB накопителей
-                foreach (System.Management.ManagementObject drive in new System.Management.ManagementObjectSearcher(
-                        "select * from Win32_USBHub where Caption='Запоминающее устройство для USB'").Get())
                 {
 
                     PNPDeviceID = drive["PNPDeviceID"].ToString().Trim();
@@ -48,8 +59,8 @@ namespace UsbVidPid
 
                     //Получение Серийного номера устройства
                     string[] splitDeviceId = drive["PNPDeviceID"].ToString().Trim().Split('\\');
-                    listBox1.Items.Add("Серийный номер= " + splitDeviceId[2].Trim());
-                   
+                    listBox1.Items.Add("Serial= " + splitDeviceId[2].Trim());
+
 
                     // проверка на совпадение: должны быть идентичны с константами:
                     // 1. серийный номер флэшки
@@ -61,24 +72,61 @@ namespace UsbVidPid
                             PID_KEK == parsePidFromDeviceID(drive["PNPDeviceID"].ToString().Trim()).Trim()
                         )
                     {
-                       
+
                         listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim().Trim());
-                        // timer1.Enabled = false;
-                        resultat = true;
+                        timer1.Enabled = false;
                         // POWER_RESET();
                     }
                     else
                     {
-                        // timer1.Enabled = true;
-                        resultat = false;
+                        timer1.Enabled = true;
                     }
+                    // end проверки на нашу флэшку
+
                     //Разделение списка устройств пустой строкой
                     listBox1.Items.Add("");
                 }
-            }
+            } // end for each
+
+        }
+        public bool IsFlashInside()
+        {
+            bool resultat = false;
+            string PNPDeviceID = string.Empty;
+         
+            //Получение списка USB накопителей
+            foreach (System.Management.ManagementObject drive in new System.Management.ManagementObjectSearcher(
+                    "select * from Win32_USBHub where Caption='Запоминающее устройство для USB'").Get())
+            {
+                PNPDeviceID = drive["PNPDeviceID"].ToString().Trim();
+                //Получение Серийного номера устройства
+                string[] splitDeviceId = drive["PNPDeviceID"].ToString().Trim().Split('\\');
+
+                // проверка на совпадение: должны быть идентичны с константами:
+                // 1. серийный номер флэшки
+                // 2. VID (коды производителя)
+                // 3. PID (код устройства)
+                if (
+                        SERIAL_KEK == splitDeviceId[2].Trim() &&
+                        VID_KEK == parseVidFromDeviceID(drive["PNPDeviceID"].ToString().Trim()).Trim() &&
+                        PID_KEK == parsePidFromDeviceID(drive["PNPDeviceID"].ToString().Trim()).Trim()
+                    )
+                {
+                    // timer1.Enabled = false;
+                    resultat = true;
+                    // POWER_RESET();
+                }
+                else
+                {
+                    timer1.Enabled = true;
+                    resultat = false;
+                }
+                // end проверки на нашу флэшку
+            } // end for each
 
             return resultat;
-        }
+        } // bool IsFlashInside();
+
         public void run_command(string commandToRun)
         {
             // отвечает за запуск команд командной строки
@@ -94,31 +142,54 @@ namespace UsbVidPid
             proc1.WindowStyle = ProcessWindowStyle.Hidden; // hidden to hide
             Process.Start(proc1);
         }
+
         public void POWER_RESET()
         {
             /* условия:
              * 1. флэшка есть + файла нет --- создать файл
              * 2. флэшки нет + файл есть --- удаляем файл
              */
-
-            
+            /*
             // 2. флэшки нет + файл есть --- удаляем файл
             if (!IsFlashInside() && isFileOK())
             {
                 deleteFile();
-                label1.Text = "RESET";
+                label1.Invoke((MethodInvoker)delegate()
+                {
+                    label1.Text = "RESET";
+                });
+
+                // run_command("shutdown /r /t 5"); // команда на перезагрузку
+                Environment.Exit(0); // досрочно закрыть приложение 
             }
             // 1. флэшка есть + файла нет --- создать файл
             else if ((IsFlashInside() && !isFileOK()))
             {
                 createFile(); // создать файл если его нет (из ветки 1)
-                label1.Text = "RESET";
-            }
-            else { label1.Text = "POWER ON"; }
-           
+                label1.Invoke((MethodInvoker)delegate()
+                {
+                    label1.Text = "RESET";
+                });
 
-            // run_command("shutdown /r /t 5"); // команда на перезагрузку
-            // Environment.Exit(0); // досрочно закрыть приложение 
+                // run_command("shutdown /r /t 5"); // команда на перезагрузку
+                Environment.Exit(0); // досрочно закрыть приложение 
+            }
+            */
+            
+            if ( (file ^ flash) == true)
+            {
+                if (!file) { createFile(); }
+                else       { deleteFile(); }
+                
+                // для фонового потока
+                label1.Invoke((MethodInvoker)delegate()
+                {
+                    label1.Text = "RESET";
+                });
+
+                // run_command("shutdown /r /t 5"); // команда на перезагрузку
+                Environment.Exit(0); // досрочно закрыть приложение 
+            }
             
         }
         public void POWER_ON()
@@ -127,10 +198,14 @@ namespace UsbVidPid
              * 1. флэшка есть + файл есть
              * 2. флэшки нет + нет файла
              */
-            if ((IsFlashInside() && isFileOK()) || (!IsFlashInside() && !isFileOK()))
+            // if ((IsFlashInside() && isFileOK()) || (!IsFlashInside() && !isFileOK()))
+            if ( !( flash ^ file ) )
             {
-                // run_command("ping localhost");
-                label1.Text = "POWER on";
+                // для фонового потока
+                label1.Invoke((MethodInvoker)delegate()
+                {
+                    label1.Text = "POWER ON";
+                });
             }
         }
 
@@ -143,12 +218,11 @@ namespace UsbVidPid
         }
         public void deleteFile()
         {
-            // File.Create(dirToFile).Close();
             try
-            {
-                File.Delete(dirToFile);
+            { 
+                File.Delete(dirToFile); 
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
@@ -156,19 +230,15 @@ namespace UsbVidPid
         public void createFile()
         {
             // если файла нет - создаёт пустой файл
-
             if (!this.fileOK)
             {
                 using (var myFile = File.Create(dirToFile))
                 {
                     // interact with myFile here, it will be disposed automatically
                     myFile.Close();
-                }
-
+                } // создали файл и закрыли его тут же
             }            
-        }
-
-        
+        } // end of create file
 
         public string parsePCIVendor(string s)
         {
@@ -199,43 +269,6 @@ namespace UsbVidPid
             return (res);
         }
         
-        
-        private void button1_Click(object sender, EventArgs e)
-        {
-            {
-                IsFlashInside();
-                string PNPDeviceID = string.Empty;
-
-                this.listBox1.Items.Clear(); //Предварительно очищаем список
-
-                //Получение списка USB накопителей
-                foreach (System.Management.ManagementObject drive in new System.Management.ManagementObjectSearcher(
-                        "select * from Win32_USBHub").Get())
-                {
-
-                    PNPDeviceID = drive["PNPDeviceID"].ToString().Trim();
-                    //Получение Ven устройства
-                    listBox1.Items.Add("VID= " + parseVidFromDeviceID(drive["PNPDeviceID"].ToString().Trim()).Trim());
-
-                    //Получение Prod устройства
-                    listBox1.Items.Add("PID= " + parsePidFromDeviceID(drive["PNPDeviceID"].ToString().Trim()).Trim());
-
-                    //Получение Серийного номера устройства
-                    string[] splitDeviceId = drive["PNPDeviceID"].ToString().Trim().Split('\\');
-                    listBox1.Items.Add("Серийный номер= " + splitDeviceId[2].Trim());
-                    
-
-                    timer1.Enabled = false;
-                   
-                    //Разделение списка устройств пустой строкой
-                    listBox1.Items.Add("");
-                    
-                }
-                
-            }
-
-        }
-
         // разбор строк на коды производителя и устройства USB
         private string parseVidFromDeviceID(string deviceId)
         {
@@ -264,56 +297,50 @@ namespace UsbVidPid
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            // IsFlashInside(); // мониторит наличие флэшки
-            label2.Text = "Флэшка есть? =" + Convert.ToString(IsFlashInside());
-            label3.Text = "Файл есть? =" + Convert.ToString(isFileOK());
+            // перенесено в backgroundWorker1
+            // POWER_ON();
+            // POWER_RESET();
 
-            POWER_ON();
-            POWER_RESET();
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            this.listBox1.Items.Clear();
-            foreach (System.Management.ManagementObject drive in new System.Management.ManagementObjectSearcher(
-                        "select * from Win32_PnPEntity").Get())
+            // if ( (IsFlashInside() && isFileOK())&&((IsFlashInside() && isFileOK()) || (!IsFlashInside() && !isFileOK())) )
+            if (flash && file) 
             {
-                if ( drive["Description"].ToString().Trim().Contains("USB-устройство ввода"))
-                {
-                    listBox1.Items.Add("LOOOOOOL");
-                    listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim());
-                    listBox1.Items.Add(" - " + drive["Description"].ToString().Trim());
-                    listBox1.Items.Add("---");
-                }
-                if (drive["PNPDeviceId"].ToString().Trim().Contains("USB\\VID_0BDA&PID_0103"))
-                {
-                    listBox1.Items.Add("-----");
-                    listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim());
-                    listBox1.Items.Add(" - " + drive["Description"].ToString().Trim());
-                    listBox1.Items.Add("---");
-                }
-                /*
-                if (drive["Description"].ToString().Trim() == "Дисковый накопитель")
-                {
-                    listBox1.Items.Add("");
-                    listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim());
-                    listBox1.Items.Add(" - " + drive["Description"].ToString().Trim());
-                    listBox1.Items.Add("");
-                }
-                 * */
-                //listBox1.Items.Add(drive["PNPDeviceID"].ToString().Trim());
-                //listBox1.Items.Add(" - " + drive["Description"].ToString().Trim());
+                run_command(FullNameBat1);
+            }
+            // if ( (!IsFlashInside() && !isFileOK())&&((IsFlashInside() && isFileOK()) || (!IsFlashInside() && !isFileOK())) )
+            if ( !flash && !file )
+            {
+                run_command(FullNameBat2);
+            }
 
-            }// NYHUA
-            
+            if (formIsVisible)
+            {
+                print_USB_devices();
+            }
         }
+
+        //автозагрузка
+        const string name = "MyTestApplication";
+        public bool SetAutorunValue(bool autorun)
+        {
+            string ExePath = System.Windows.Forms.Application.ExecutablePath;
+            RegistryKey reg;
+            reg = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run\\");
+            try
+            {
+                if (autorun)
+                    reg.SetValue(name, ExePath);
+                else
+                    reg.DeleteValue(name);
+                reg.Close();
+            }
+            catch  {return false;}
+            return true;
+        } // end set autorun
+
         private void PutToTray(bool isPut)
         {
+            formIsVisible = !isPut;
+
             this.notifyIcon1.Visible = isPut;
             this.WindowState = (isPut) ? FormWindowState.Minimized : FormWindowState.Normal;
             this.ShowInTaskbar = !isPut;
@@ -323,54 +350,71 @@ namespace UsbVidPid
             PutToTray(true);
         }
 
-        
-
         ContextMenu trayMenu = new ContextMenu();
         private void Form1_Load(object sender, EventArgs e)
         {
-            
-        }
+            // считываем файл конфига (обновим переменные и галки на форме)
+            string[] lines = new string[10];
+            try
+            {
+            lines = System.IO.File.ReadAllLines(configFile);
+            foreach (string line in lines)
+            {
+                // берем все строки из файла, обновляем по ним наши переменные                    
+                if (line.Contains("VID"))
+                {
+                    VID_KEK = line.Substring(line.LastIndexOf('=') + 1).Trim();
+                }
+                else if (line.Contains("PID"))
+                {
+                    PID_KEK = line.Substring(line.LastIndexOf('=') + 1).Trim();
+                }
+                else if (line.Contains("SERIAL"))
+                {
+                    SERIAL_KEK = line.Substring(line.LastIndexOf('=') + 1).Trim();
+                }
+                else if (line.Contains("Startup"))
+                {
+                    string s = line.Substring(line.LastIndexOf('=') + 1).Trim();
+                    if (s == "True")
+                    {
+                        checkBox2.Checked = true;
+                    }
+                    else
+                    {
+                        checkBox2.Checked = false;
+                    }
+                }
+                
 
-        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+                else { MessageBox.Show("YOU ARE OLEN! " + line); }
+                maskedTextBox1.Text = VID_KEK;
+                maskedTextBox3.Text = PID_KEK;
+                maskedTextBox2.Text = SERIAL_KEK;
+                }
+            } // end foreach
+            catch 
+            {
+                MessageBox.Show("Конфигурационный файл неизвестно где");    
+            }
+            
+            timer1.Enabled = true;
+            if (backgroundWorker1.IsBusy != true)
+            {
+                // Start the asynchronous operation.
+                backgroundWorker1.RunWorkerAsync();
+            }
+        } // end void
+        
+        private void toolStripMenuItem2_Click(object sender, EventArgs e)
         {
             PutToTray(false);
         }
 
-        private void notifyIcon1_BalloonTipShown(object sender, EventArgs e)
-        {
-           // MessageBox.Show("");
-        }
-
-        private void timer2_Tick(object sender, EventArgs e)
-        {
-            if (notifyIcon1.BalloonTipTitle == "is connected") notifyIcon1.BalloonTipTitle = "is not connected";
-            else
-            {
-                notifyIcon1.BalloonTipTitle = "is connected";
-            }
-            //MessageBox.Show("");
-            //notifyIcon1.ShowBalloonTip(2000);
-        }
-
-        private void toolStripMenuItem2_Click(object sender, EventArgs e)
-        {
-            //PCI_Connect();
-        }
-
         private void pCIDisconnectToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //PCI_Disconnect();
-        }
-
-        private void notifyIcon1_MouseMove(object sender, MouseEventArgs e)
-        {
-            string message = "ПРИВЕТ";
-            notifyIcon1.BalloonTipTitle = message;
-            notifyIcon1.BalloonTipText = message + "!";
-
-            notifyIcon1.ShowBalloonTip(500);
-     
-            
+            notifyIcon1.Visible = false;
+            Environment.Exit(0);
         }
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -378,41 +422,80 @@ namespace UsbVidPid
             PutToTray(false);
         }
 
-        
-
-        private void button5_Click(object sender, EventArgs e)
+        private void checkBox2_CheckedChanged(object sender, EventArgs e)
         {
-            deleteFile();
-        }
-
-        private void button6_Click(object sender, EventArgs e)
-        {
-            createFile();
-        }
-
-        private void button2_Click_1(object sender, EventArgs e)
-        {
-            label2.Text = "Флэшка есть? =" + Convert.ToString(IsFlashInside());
-            label3.Text = "Файл есть? =" + Convert.ToString(isFileOK());
-
-            POWER_ON();
-            POWER_RESET();
-        }
-
-        private void button7_Click(object sender, EventArgs e)
-        {
-            if (timer1.Enabled == false)
+            CheckBox checkBox = (CheckBox)sender; // приводим отправителя к элементу типа CheckBox
+            if (checkBox.Checked == true)
             {
-                
-                timer1.Enabled = true;
-                button7.Text = "Включен таймер";
-            }
-            else
+                SetAutorunValue(true);
+            } 
+            else     
             {
-                
-                timer1.Enabled = false;
-                button7.Text = "Выключен таймер";
+                SetAutorunValue(false);
             }
+        } // end void
+
+        private void mess()
+        {
+            string message = "E-GPU";
+            notifyIcon1.BalloonTipTitle = message;
+            notifyIcon1.BalloonTipText = "Connect";
+            
+            notifyIcon1.ShowBalloonTip(500);
+        }
+
+        private void keeh()
+        { 
+           if (IsFlashInside())
+           {
+               mess();
+           }        
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            // применить вендор и устрйство
+            // запись в файл
+            string text = "VID = " + maskedTextBox1.Text + "\n";
+            text += "SERIAL = " + maskedTextBox2.Text + "\n";
+            text += "PID = " + maskedTextBox3.Text + "\n";
+
+            text += "Startup = " + Convert.ToString(checkBox2.Checked) + "\n";
+
+            System.IO.File.WriteAllText(configFile, text);
+            VID_KEK = maskedTextBox1.Text;
+            SERIAL_KEK = maskedTextBox2.Text;
+            PID_KEK = maskedTextBox3.Text;
+
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (true)
+            {
+                flash = IsFlashInside();
+                file = isFileOK();
+
+                POWER_ON();
+                POWER_RESET();
+                Thread.Sleep(10);
+            }
+        }
+
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            PutToTray(true);
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            notifyIcon1.Visible = false;
+        }
+
+        private void timer2_Tick(object sender, EventArgs e)
+        {
+            
         }
     }
 }
+    

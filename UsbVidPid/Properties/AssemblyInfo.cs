@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Управление общими сведениями о сборке осуществляется с помощью 
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
-[assembly: AssemblyTitle("UsbVidPid")]
+[assembly: AssemblyTitle("EGPU")]
 [assembly: AssemblyDescription("www.CSharpCoderR.com")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("www.CSharpCoderR.com")]
-[assembly: AssemblyProduct("UsbVidPid")]
+[assembly: AssemblyProduct("EGPU")]
 [assembly: AssemblyCopyright("Copyright ©  2014 www.CSharpCoderR.com")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
