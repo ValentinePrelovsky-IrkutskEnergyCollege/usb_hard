@@ -69,7 +69,7 @@ namespace UsbVidPid
                     }
                     else
                     {
-                        timer1.Enabled = true;
+                        // timer1.Enabled = true;
                         resultat = false;
                     }
                     //Разделение списка устройств пустой строкой
